@@ -68,6 +68,8 @@ html {
   scroll-behavior: smooth;
   font-size: 16px;
   color-scheme: dark;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 body {
@@ -76,6 +78,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
+  max-width: 100%;
   position: relative;
   selection-background-color: var(--color-orange);
   selection-color: #fff;
@@ -90,20 +93,18 @@ body {
 /* Background Embers Canvas & Grid Layer */
 #ember-canvas {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   z-index: 1;
 }
 
 .ambient-grid {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   background-image: 
     radial-gradient(circle at 50% 0%, rgba(255, 107, 0, 0.08) 0%, transparent 60%),
     linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
@@ -376,6 +377,7 @@ h1, h2, h3, h4, h5, h6 {
 .hero-section {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   padding-top: 130px;
   padding-bottom: 70px;
   display: flex;
@@ -1919,7 +1921,7 @@ h1, h2, h3, h4, h5, h6 {
     min-width: 240px !important;
   }
 
-  /* Disable heavy real-time backdrop blur on mobile/tablet cards to eliminate GPU freeze, texture drops, and black screen */
+  /* Disable heavy real-time backdrop blur and eliminate GPU layer thrashing on mobile/tablet */
   .skill-card,
   .software-card,
   .resp-card,
@@ -1934,13 +1936,39 @@ h1, h2, h3, h4, h5, h6 {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: #0f1218 !important;
-    transform: translateZ(0);
+    transform: none !important;
+  }
+
+  /* Remove heavy backdrop filters from fixed header and floating items on mobile to eliminate GPU stalls */
+  .site-header {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #08090c !important;
+  }
+  .floating-signature {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #0e1117 !important;
+  }
+
+  /* Prevent blank modal rendering on mobile devices */
+  .modal-backdrop {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(4, 6, 9, 0.94) !important;
+  }
+  .modal-dialog {
+    transform: none !important;
   }
 }
 
 @media (max-width: 768px) {
   #ember-canvas {
     display: none !important;
+  }
+  .ambient-grid {
+    background-image: radial-gradient(circle at 50% 0%, rgba(255, 107, 0, 0.06) 0%, transparent 65%) !important;
+    background-size: 100% 100% !important;
   }
   .hero-backdrop-glow {
     filter: none !important;
@@ -1951,14 +1979,15 @@ h1, h2, h3, h4, h5, h6 {
     top: 70px;
     left: 0;
     width: 100%;
-    background: rgba(8, 9, 12, 0.98);
+    background: #08090c;
     flex-direction: column;
     padding: 30px;
     gap: 20px;
     border-bottom: 1px solid rgba(255, 107, 0, 0.2);
     transform: translateY(-120%);
     transition: transform var(--transition-normal);
-    backdrop-filter: blur(20px);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
   .nav-menu.open {
     transform: translateY(0);

@@ -89,31 +89,47 @@ function initHeaderScroll() {
   const header = document.querySelector('.site-header');
   const sections = document.querySelectorAll('section[id]');
   const navLinks = document.querySelectorAll('.nav-link');
+  if (!header) return;
   
+  // 1. Throttled header background toggle via RAF (zero layout thrashing)
+  let isTicking = false;
+  let lastScrolledState = false;
+
   window.addEventListener('scroll', () => {
-    if (window.scrollY > 40) {
-      header?.classList.add('scrolled');
-    } else {
-      header?.classList.remove('scrolled');
+    if (!isTicking) {
+      requestAnimationFrame(() => {
+        const scrolled = (window.pageYOffset || document.documentElement.scrollTop) > 40;
+        if (scrolled !== lastScrolledState) {
+          header.classList.toggle('scrolled', scrolled);
+          lastScrolledState = scrolled;
+        }
+        isTicking = false;
+      });
+      isTicking = true;
     }
-    
-    // Scroll spy
-    let current = '';
-    sections.forEach(section => {
-      const sectionTop = section.offsetTop - 120;
-      const sectionHeight = section.clientHeight;
-      if (window.pageYOffset >= sectionTop && window.pageYOffset < sectionTop + sectionHeight) {
-        current = section.getAttribute('id');
-      }
+  }, { passive: true });
+
+  // 2. High-performance off-thread ScrollSpy using IntersectionObserver
+  if ('IntersectionObserver' in window && sections.length > 0) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.getAttribute('id');
+          navLinks.forEach(link => {
+            const isMatch = link.getAttribute('href') === `#${id}`;
+            if (link.classList.contains('active') !== isMatch) {
+              link.classList.toggle('active', isMatch);
+            }
+          });
+        }
+      });
+    }, {
+      rootMargin: '-20% 0px -60% 0px',
+      threshold: 0
     });
-    
-    navLinks.forEach(link => {
-      link.classList.remove('active');
-      if (link.getAttribute('href') === `#${current}`) {
-        link.classList.add('active');
-      }
-    });
-  });
+
+    sections.forEach(sec => observer.observe(sec));
+  }
 }
 
 /* ==========================================================================
@@ -264,6 +280,10 @@ function openModal(id) {
   if (modal) {
     document.body.style.overflow = 'hidden';
     modal.classList.add('open');
+    // Force immediate paint pass so mobile browsers display content immediately without needing extra tap
+    void modal.offsetHeight;
+    const dialog = modal.querySelector('.modal-dialog');
+    if (dialog) void dialog.offsetHeight;
   }
 }
 
