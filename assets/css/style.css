@@ -1700,6 +1700,26 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(10, 13, 18, 0.6);
 }
 
+/* Ensure modal forms allow scrollable body while keeping footer button permanently pinned & visible */
+.modal-dialog form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.modal-dialog form .modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-dialog form .modal-footer {
+  flex-shrink: 0;
+}
+
 /* Forms inside modal */
 .form-group {
   margin-bottom: 18px;
@@ -1883,6 +1903,17 @@ h1, h2, h3, h4, h5, h6 {
     width: 240px !important;
     min-width: 240px !important;
   }
+
+  /* Disable heavy real-time backdrop blur on mobile scrolling cards to eliminate GPU freeze/black screen */
+  .skill-card,
+  .software-card,
+  .resp-card,
+  .cert-logo-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #11141c !important;
+    transform: translateZ(0);
+  }
 }
 
 @media (max-width: 768px) {
@@ -1927,13 +1958,48 @@ h1, h2, h3, h4, h5, h6 {
   }
   /* skills-grid managed by horizontal continuous flow */
   .modal-dialog {
-    max-width: 95vw;
-    margin: 10px;
-    max-height: 92vh;
+    max-width: 95vw !important;
+    width: 95vw !important;
+    max-height: 90vh !important;
+    height: auto;
+    margin: auto;
     border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
-  .modal-header, .modal-body, .modal-footer {
-    padding: 16px 20px;
+  .modal-header {
+    flex-shrink: 0;
+    padding: 14px 18px;
+  }
+  .modal-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 18px;
+  }
+  .modal-footer {
+    flex-shrink: 0;
+    padding: 12px 18px;
+    background: #0b0e14;
+    border-top: 1px solid rgba(255, 107, 0, 0.25);
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+  }
+  .modal-footer .btn {
+    flex: 1;
+    min-height: 44px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
   }
   .contact-card-inner {
     flex-direction: column;
@@ -1981,9 +2047,18 @@ h1, h2, h3, h4, h5, h6 {
     height: 215px;
   }
   .modal-dialog {
-    max-width: 100%;
-    margin: 6px;
+    max-width: 96vw !important;
+    width: 96vw !important;
+    max-height: 92vh !important;
+    margin: auto;
     border-radius: 14px;
+  }
+  .modal-footer {
+    padding: 12px 14px;
+  }
+  .modal-footer .btn {
+    min-height: 46px;
+    font-size: 0.86rem;
   }
   #book-call-form .modal-body > div[style*="grid-template-columns"] {
     grid-template-columns: 1fr !important;

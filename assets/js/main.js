@@ -452,60 +452,83 @@ function toggleFaultDetail() {
 /* ==========================================================================
    9. CONTINUOUS HORIZONTAL TICKERS (MOBILE & TABLET ONLY)
    ========================================================================== */
-function setupHorizontalTicker(gridSelector, speed = 0.75) {
-  const grid = document.querySelector(gridSelector);
-  if (!grid) return;
+function initHorizontalTickers() {
+  const tickerDefs = [
+    { selector: '.skills-grid', speed: 0.75 },
+    { selector: '.software-grid', speed: 0.7 },
+    { selector: '.responsibilities-grid', speed: 0.75 },
+    { selector: '.cert-logos-grid', speed: 0.7 }
+  ];
 
-  // Clone original cards once for seamless continuous loop
-  const originalCards = Array.from(grid.children);
-  originalCards.forEach(card => {
-    const clone = card.cloneNode(true);
-    clone.setAttribute('aria-hidden', 'true');
-    grid.appendChild(clone);
+  const activeTickers = [];
+
+  tickerDefs.forEach(({ selector, speed }) => {
+    const grid = document.querySelector(selector);
+    if (!grid) return;
+
+    // Clone original cards once for seamless continuous loop
+    const originalCards = Array.from(grid.children);
+    originalCards.forEach(card => {
+      const clone = card.cloneNode(true);
+      clone.setAttribute('aria-hidden', 'true');
+      grid.appendChild(clone);
+    });
+
+    const state = {
+      grid: grid,
+      speed: speed,
+      isVisible: false,
+      isInteracting: false,
+      resumeTimer: null
+    };
+
+    const pause = () => {
+      state.isInteracting = true;
+      if (state.resumeTimer) clearTimeout(state.resumeTimer);
+    };
+
+    const resume = (delay = 2000) => {
+      if (state.resumeTimer) clearTimeout(state.resumeTimer);
+      state.resumeTimer = setTimeout(() => {
+        state.isInteracting = false;
+      }, delay);
+    };
+
+    grid.addEventListener('touchstart', pause, { passive: true });
+    grid.addEventListener('touchend', () => resume(2200), { passive: true });
+    grid.addEventListener('touchcancel', () => resume(1000), { passive: true });
+    grid.addEventListener('mouseenter', pause);
+    grid.addEventListener('mouseleave', () => resume(500));
+
+    // IntersectionObserver: Only tick when actually visible on screen!
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        state.isVisible = entries[0].isIntersecting;
+      }, { rootMargin: '80px 0px 80px 0px', threshold: 0.05 });
+      observer.observe(grid);
+    } else {
+      state.isVisible = true;
+    }
+
+    activeTickers.push(state);
   });
 
-  let isInteracting = false;
-  let resumeTimer = null;
-
-  function animate() {
+  // Single unified master RAF loop for all tickers
+  function masterLoop() {
     if (window.innerWidth <= 992) {
-      if (!isInteracting) {
-        grid.scrollLeft += speed;
-        const loopBoundary = grid.scrollWidth / 2;
-        if (grid.scrollLeft >= loopBoundary) {
-          grid.scrollLeft -= loopBoundary;
+      for (let i = 0; i < activeTickers.length; i++) {
+        const item = activeTickers[i];
+        if (item.isVisible && !item.isInteracting) {
+          item.grid.scrollLeft += item.speed;
+          const loopBoundary = item.grid.scrollWidth / 2;
+          if (item.grid.scrollLeft >= loopBoundary) {
+            item.grid.scrollLeft -= loopBoundary;
+          }
         }
       }
     }
-    requestAnimationFrame(animate);
+    requestAnimationFrame(masterLoop);
   }
 
-  // Touch and mouse events to pause when user wants to read or swipe
-  const pause = () => {
-    isInteracting = true;
-    if (resumeTimer) clearTimeout(resumeTimer);
-  };
-
-  const resume = (delay = 2000) => {
-    if (resumeTimer) clearTimeout(resumeTimer);
-    resumeTimer = setTimeout(() => {
-      isInteracting = false;
-    }, delay);
-  };
-
-  grid.addEventListener('touchstart', pause, { passive: true });
-  grid.addEventListener('touchend', () => resume(2200), { passive: true });
-  grid.addEventListener('touchcancel', () => resume(1000), { passive: true });
-
-  grid.addEventListener('mouseenter', pause);
-  grid.addEventListener('mouseleave', () => resume(500));
-
-  requestAnimationFrame(animate);
-}
-
-function initHorizontalTickers() {
-  setupHorizontalTicker('.skills-grid', 0.75);
-  setupHorizontalTicker('.software-grid', 0.7);
-  setupHorizontalTicker('.responsibilities-grid', 0.75);
-  setupHorizontalTicker('.cert-logos-grid', 0.7);
+  requestAnimationFrame(masterLoop);
 }
