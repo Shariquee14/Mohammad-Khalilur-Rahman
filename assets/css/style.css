@@ -5,6 +5,9 @@
    ========================================================================== */
 
 :root {
+  color-scheme: dark;
+  color-scheme: only dark;
+  supported-color-schemes: dark;
   --bg-primary: #08090c;
   --bg-secondary: #0e1117;
   --bg-card: rgba(18, 22, 29, 0.75);
@@ -47,6 +50,18 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+html, body {
+  color-scheme: dark;
+  color-scheme: only dark;
+}
+
+/* Enforce native color rendering & prevent mobile browser auto-darkening, image dimming, or color shifts */
+@media (prefers-color-scheme: dark) {
+  :root, html, body {
+    color-scheme: only dark !important;
+  }
 }
 
 html {
