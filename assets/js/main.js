@@ -26,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
 function initEmbers() {
   const canvas = document.getElementById('ember-canvas');
   if (!canvas) return;
+  // Mobile / tablet optimization: skip canvas particles to preserve GPU fillrate & prevent battery drain/lag
+  if (window.innerWidth <= 768) return;
   const ctx = canvas.getContext('2d');
   
   let width = canvas.width = window.innerWidth;
@@ -373,11 +375,11 @@ function initBookingForm() {
       const body = encodeURIComponent(
         `Hello Eng. Mohammad Khalilur Rahman,\n\n` +
         `I would like to schedule a call / consultation with you:\n\n` +
-        `• Name: ${name}\n` +
-        `• Work Email: ${email}\n` +
-        `• Phone/WhatsApp: ${phone}\n` +
-        `• Preferred Date: ${date}\n` +
-        `• Reason: ${message}\n\n` +
+        `ï¿½ Name: ${name}\n` +
+        `ï¿½ Work Email: ${email}\n` +
+        `ï¿½ Phone/WhatsApp: ${phone}\n` +
+        `ï¿½ Preferred Date: ${date}\n` +
+        `ï¿½ Reason: ${message}\n\n` +
         `Best regards,\n${name}`
       );
       window.location.href = `mailto:mdkhalil464037@gmail.com?subject=${subject}&body=${body}`;
@@ -477,34 +479,47 @@ function initHorizontalTickers() {
     const state = {
       grid: grid,
       speed: speed,
+      pos: 0,
+      loopBoundary: 0,
       isVisible: false,
       isInteracting: false,
       resumeTimer: null
     };
 
+    const updateBoundary = () => {
+      state.loopBoundary = grid.scrollWidth / 2;
+    };
+
+    updateBoundary();
+
     const pause = () => {
       state.isInteracting = true;
       if (state.resumeTimer) clearTimeout(state.resumeTimer);
+      state.pos = grid.scrollLeft;
     };
 
     const resume = (delay = 2000) => {
       if (state.resumeTimer) clearTimeout(state.resumeTimer);
       state.resumeTimer = setTimeout(() => {
+        state.pos = grid.scrollLeft;
         state.isInteracting = false;
       }, delay);
     };
 
     grid.addEventListener('touchstart', pause, { passive: true });
-    grid.addEventListener('touchend', () => resume(2200), { passive: true });
+    grid.addEventListener('touchend', () => resume(2000), { passive: true });
     grid.addEventListener('touchcancel', () => resume(1000), { passive: true });
     grid.addEventListener('mouseenter', pause);
     grid.addEventListener('mouseleave', () => resume(500));
 
-    // IntersectionObserver: Only tick when actually visible on screen!
+    // IntersectionObserver: Only tick when actually visible in viewport
     if ('IntersectionObserver' in window) {
       const observer = new IntersectionObserver((entries) => {
         state.isVisible = entries[0].isIntersecting;
-      }, { rootMargin: '80px 0px 80px 0px', threshold: 0.05 });
+        if (state.isVisible && state.loopBoundary === 0) {
+          updateBoundary();
+        }
+      }, { rootMargin: '40px 0px 40px 0px', threshold: 0.05 });
       observer.observe(grid);
     } else {
       state.isVisible = true;
@@ -513,17 +528,44 @@ function initHorizontalTickers() {
     activeTickers.push(state);
   });
 
-  // Single unified master RAF loop for all tickers
+  // Recompute loop boundaries only on resize (never during the animation loop to eliminate layout thrashing)
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      activeTickers.forEach(item => {
+        item.loopBoundary = item.grid.scrollWidth / 2;
+        item.pos = item.grid.scrollLeft;
+      });
+    }, 250);
+  }, { passive: true });
+
+  // Suspend ticker mutations entirely during vertical window scroll for 100% native smooth scrolling
+  let isWindowScrolling = false;
+  let scrollEndTimer = null;
+  window.addEventListener('scroll', () => {
+    isWindowScrolling = true;
+    if (scrollEndTimer) clearTimeout(scrollEndTimer);
+    scrollEndTimer = setTimeout(() => {
+      isWindowScrolling = false;
+      // Resync positions after scroll
+      activeTickers.forEach(item => {
+        item.pos = item.grid.scrollLeft;
+      });
+    }, 150);
+  }, { passive: true });
+
+  // Single unified master RAF loop for all tickers: zero forced reflows, zero DOM layout reads in the loop
   function masterLoop() {
-    if (window.innerWidth <= 992) {
+    if (window.innerWidth <= 992 && !isWindowScrolling) {
       for (let i = 0; i < activeTickers.length; i++) {
         const item = activeTickers[i];
-        if (item.isVisible && !item.isInteracting) {
-          item.grid.scrollLeft += item.speed;
-          const loopBoundary = item.grid.scrollWidth / 2;
-          if (item.grid.scrollLeft >= loopBoundary) {
-            item.grid.scrollLeft -= loopBoundary;
+        if (item.isVisible && !item.isInteracting && item.loopBoundary > 0) {
+          item.pos += item.speed;
+          if (item.pos >= item.loopBoundary) {
+            item.pos -= item.loopBoundary;
           }
+          item.grid.scrollLeft = item.pos;
         }
       }
     }
