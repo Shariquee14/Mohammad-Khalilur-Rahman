@@ -456,10 +456,10 @@ function toggleFaultDetail() {
    ========================================================================== */
 function initHorizontalTickers() {
   const tickerDefs = [
-    { selector: '.skills-grid', speed: 0.75 },
-    { selector: '.software-grid', speed: 0.7 },
-    { selector: '.responsibilities-grid', speed: 0.75 },
-    { selector: '.cert-logos-grid', speed: 0.7 }
+    { selector: '.skills-grid', speed: 1.25 },
+    { selector: '.software-grid', speed: 1.2 },
+    { selector: '.responsibilities-grid', speed: 1.25 },
+    { selector: '.cert-logos-grid', speed: 1.2 }
   ];
 
   const activeTickers = [];
